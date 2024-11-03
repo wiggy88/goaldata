@@ -3,7 +3,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 
 # Load the dataset
-df = pd.read_csv('C:\\Users\\tilly\\OneDrive\\Desktop\\FootballData\\allleagues_goals.csv')
+df = pd.read_csv('allleagues_goals.csv')
 
 # Function to convert "Minute" to numeric and classify by half
 def convert_to_minutes_and_segment(time):
