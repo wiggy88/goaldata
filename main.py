@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 # Load the dataset
 df = pd.read_csv('https://raw.githubusercontent.com/wiggy88/goaldata/main/allleagues_goals.csv')
 
+
 # Function to convert "Minute" to numeric and classify by half
 def convert_to_minutes_and_segment(time):
     if isinstance(time, str) and '+' in time:
@@ -30,6 +31,7 @@ def convert_to_minutes_and_segment(time):
         else:
             return '91+'  # Additional extra time beyond regular stoppage
 
+
 # Apply the function to the "Minute" column to classify minutes
 df['15_min_segment'] = df['Minute'].apply(convert_to_minutes_and_segment)
 
@@ -37,42 +39,19 @@ df['15_min_segment'] = df['Minute'].apply(convert_to_minutes_and_segment)
 if 'MatchID' not in df.columns:
     df['MatchID'] = df['Date'].astype(str) + '_' + df['Team'] + '_' + df['Opponent']
 
-# Initialize score tracking for each match
-match_scores = {}
-df['Score'] = ''
-
-# Iterate through each goal and update scores
-for index, row in df.iterrows():
-    team = row['Team']
-    match_id = row['MatchID']
-
-    # Initialize scores for a new match
-    if match_id not in match_scores:
-        match_scores[match_id] = {'home': 0, 'away': 0}
-
-    # Determine if the team is 'home' or 'away' and update scores accordingly
-    if row['Venue']:
-        match_scores[match_id]['home'] += 1
-    else:
-        match_scores[match_id]['away'] += 1
-
-    # Store the current score in the DataFrame
-    current_score = f"{match_scores[match_id]['home']}-{match_scores[match_id]['away']}"
-    df.at[index, 'Score'] = current_score
-
 # Streamlit app starts here
 st.title("Football Data Exploration App")
 
 # Sidebar filters
 st.sidebar.header("Filters")
-selected_league = st.sidebar.selectbox("Select League", df['League'].unique())
+st.sidebar.markdown("<h3 style='font-size: 20px;'>Select League:</h3>", unsafe_allow_html=True)
+selected_league = st.sidebar.selectbox("Choose a league:", df['League'].unique())
 
 # Filter data based on selected league
 filtered_data = df[df['League'] == selected_league]
 
-# Show filtered data
-st.subheader("Filtered Data")
-st.write(filtered_data)
+# Display overall league stats
+st.subheader(f"Overall Stats for {selected_league}")
 
 # Calculate and display top scorers for the selected league
 top_scorers = filtered_data['Scorer'].value_counts().head(10)
@@ -98,3 +77,45 @@ st.bar_chart(goals_by_team)
 goals_by_segment = filtered_data['15_min_segment'].value_counts().sort_index()
 st.subheader("Goals by 15-Minute Segment in " + selected_league)
 st.bar_chart(goals_by_segment)
+
+# Team selection for individual stats
+st.sidebar.markdown("<h3 style='font-size: 20px;'>Select Team:</h3>", unsafe_allow_html=True)
+selected_team = st.sidebar.selectbox("Choose a team:", filtered_data['Team'].unique())
+
+# Display team stats
+if selected_team:
+    team_data = filtered_data[filtered_data['Team'] == selected_team]
+    st.subheader(f"Stats for {selected_team}")
+
+    # Display team goals and assists
+    team_top_scorers = team_data['Scorer'].value_counts().head(10)
+    st.subheader("Top Scorers for " + selected_team)
+    st.bar_chart(team_top_scorers)
+
+    team_top_assists = team_data['Assist'].value_counts().head(10)
+    st.subheader("Top Assisters for " + selected_team)
+    st.bar_chart(team_top_assists)
+
+    # Count goals by the 15-minute segments for the selected team
+    team_goals_by_segment = team_data['15_min_segment'].value_counts().sort_index()
+    st.subheader("Goals by 15-Minute Segment for " + selected_team)
+    st.bar_chart(team_goals_by_segment)
+
+# Player selection for individual stats
+st.sidebar.markdown("<h3 style='font-size: 20px;'>Select Player:</h3>", unsafe_allow_html=True)
+selected_player = st.sidebar.selectbox("Choose a player:", df[df['League'] == selected_league]['Scorer'].unique())
+
+# Display player stats
+if selected_player:
+    player_data = filtered_data[filtered_data['Scorer'] == selected_player]
+    st.subheader(f"Stats for {selected_player}")
+
+    # Display goals scored by the player
+    player_goals = player_data['Scorer'].value_counts()
+    st.bar_chart(player_goals)
+
+    # Display assists provided by the player
+    player_assists = player_data['Assist'].value_counts()
+    st.subheader("Assists by " + selected_player)
+    st.bar_chart(player_assists)
+
